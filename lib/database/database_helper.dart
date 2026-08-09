@@ -4,7 +4,8 @@ import 'package:sqflite/sqflite.dart';
 import '../models/password.dart';
 
 class DatabaseHelper {
-  static final DatabaseHelper instance = DatabaseHelper._init();
+  static final DatabaseHelper instance =
+      DatabaseHelper._init();
 
   static Database? _database;
 
@@ -15,15 +16,22 @@ class DatabaseHelper {
       return _database!;
     }
 
-    _database = await _initDB('password_vault.db');
+    _database = await _initDB(
+      'password_vault.db',
+    );
 
     return _database!;
   }
 
-  Future<Database> _initDB(String filePath) async {
+  Future<Database> _initDB(
+    String filePath,
+  ) async {
     final dbPath = await getDatabasesPath();
 
-    final path = join(dbPath, filePath);
+    final path = join(
+      dbPath,
+      filePath,
+    );
 
     return await openDatabase(
       path,
@@ -52,7 +60,9 @@ class DatabaseHelper {
   }
 
   // INSERTAR
-  Future<int> insertarPassword(Password password) async {
+  Future<int> insertarPassword(
+    Password password,
+  ) async {
     final db = await database;
 
     return await db.insert(
@@ -78,7 +88,9 @@ class DatabaseHelper {
   }
 
   // OBTENER UNA
-  Future<Password?> obtenerPassword(int id) async {
+  Future<Password?> obtenerPassword(
+    int id,
+  ) async {
     final db = await database;
 
     final result = await db.query(
@@ -88,7 +100,9 @@ class DatabaseHelper {
     );
 
     if (result.isNotEmpty) {
-      return Password.fromMap(result.first);
+      return Password.fromMap(
+        result.first,
+      );
     }
 
     return null;
@@ -109,7 +123,9 @@ class DatabaseHelper {
   }
 
   // ELIMINAR
-  Future<int> eliminarPassword(int id) async {
+  Future<int> eliminarPassword(
+    int id,
+  ) async {
     final db = await database;
 
     return await db.delete(

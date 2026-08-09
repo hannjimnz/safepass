@@ -1,5 +1,6 @@
 class Password {
   final int? id;
+
   final String servicio;
   final String usuario;
   final String password;
@@ -45,9 +46,11 @@ class Password {
       password: map['password'],
       clave: map['clave'],
       categoria: map['categoria'],
-      notas: map['notas'],
+      notas: map['notas'] ?? '',
       icono: map['icono'],
-      fechaCreacion: DateTime.parse(map['fechaCreacion']),
+      fechaCreacion: DateTime.parse(
+        map['fechaCreacion'],
+      ),
     );
   }
 }

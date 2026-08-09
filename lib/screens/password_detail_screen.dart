@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 
 import '../models/password.dart';
 import '../providers/password_provider.dart';
+import 'edit_password_screen.dart';
 
 class PasswordDetailScreen extends StatefulWidget {
   final Password password;
@@ -53,7 +54,9 @@ class _PasswordDetailScreenState
                 Navigator.pop(context, false);
               },
 
-              child: const Text('Cancelar'),
+              child: const Text(
+                'Cancelar',
+              ),
             ),
 
             FilledButton(
@@ -61,7 +64,9 @@ class _PasswordDetailScreenState
                 Navigator.pop(context, true);
               },
 
-              child: const Text('Eliminar'),
+              child: const Text(
+                'Eliminar',
+              ),
             ),
           ],
         );
@@ -91,7 +96,9 @@ class _PasswordDetailScreenState
     VoidCallback? onToggle,
   }) {
     return Container(
-      margin: const EdgeInsets.only(bottom: 16),
+      margin: const EdgeInsets.only(
+        bottom: 16,
+      ),
 
       padding: const EdgeInsets.all(16),
 
@@ -111,6 +118,7 @@ class _PasswordDetailScreenState
 
           Icon(
             icono,
+
             color: Theme.of(context)
                 .colorScheme
                 .primary,
@@ -170,10 +178,41 @@ class _PasswordDetailScreenState
     return Scaffold(
 
       appBar: AppBar(
-        title: const Text('Detalles'),
+        title: const Text(
+          'Detalles',
+        ),
 
         actions: [
 
+          // BOTÓN EDITAR
+          IconButton(
+            onPressed: () async {
+
+              final resultado =
+                  await Navigator.push(
+                context,
+
+                MaterialPageRoute(
+                  builder: (_) =>
+                      EditPasswordScreen(
+                    password: password,
+                  ),
+                ),
+              );
+
+              if (resultado == true &&
+                  mounted) {
+
+                Navigator.pop(context);
+              }
+            },
+
+            icon: const Icon(
+              Icons.edit_outlined,
+            ),
+          ),
+
+          // BOTÓN ELIMINAR
           IconButton(
             onPressed: eliminarPassword,
 
@@ -248,17 +287,21 @@ class _PasswordDetailScreenState
 
             const SizedBox(height: 30),
 
+            // USUARIO
             construirCampo(
               'Usuario',
               password.usuario,
               Icons.person_outline,
             ),
 
+            // CONTRASEÑA
             construirCampo(
               'Contraseña',
               password.password,
               Icons.lock_outline,
+
               oculto: !mostrarPassword,
+
               onToggle: () {
                 setState(() {
                   mostrarPassword =
@@ -267,11 +310,14 @@ class _PasswordDetailScreenState
               },
             ),
 
+            // CLAVE
             construirCampo(
               'Clave',
               password.clave,
               Icons.key_outlined,
+
               oculto: !mostrarClave,
+
               onToggle: () {
                 setState(() {
                   mostrarClave =
@@ -280,6 +326,7 @@ class _PasswordDetailScreenState
               },
             ),
 
+            // NOTAS
             if (password.notas.isNotEmpty)
               construirCampo(
                 'Notas',
@@ -289,12 +336,14 @@ class _PasswordDetailScreenState
 
             const SizedBox(height: 10),
 
+            // COPIAR
             SizedBox(
               width: double.infinity,
               height: 52,
 
               child: FilledButton.icon(
                 onPressed: () {
+
                   ScaffoldMessenger.of(context)
                       .showSnackBar(
                     const SnackBar(

@@ -218,7 +218,7 @@ class _AddPasswordScreenState
               const SizedBox(height: 16),
 
               DropdownButtonFormField<String>(
-                value: categoriaSeleccionada,
+                initialValue: categoriaSeleccionada,
 
                 decoration: const InputDecoration(
                   labelText: 'Categoría',

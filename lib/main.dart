@@ -21,15 +21,19 @@ class PasswordVaultApp extends StatelessWidget {
     return MaterialApp(
       title: 'Password Vault',
       debugShowCheckedModeBanner: false,
+
       theme: ThemeData(
         useMaterial3: true,
         colorSchemeSeed: Colors.indigo,
-        scaffoldBackgroundColor: Colors.grey.shade100,
+        scaffoldBackgroundColor:
+            Colors.grey.shade100,
+
         appBarTheme: const AppBarTheme(
           centerTitle: true,
           elevation: 0,
         ),
       ),
+
       home: const SplashScreen(),
     );
   }
