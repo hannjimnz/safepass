@@ -3,6 +3,8 @@ import 'package:provider/provider.dart';
 
 import '../models/password.dart';
 import '../providers/password_provider.dart';
+import '../providers/context_provider.dart';
+
 import 'edit_password_screen.dart';
 
 class PasswordDetailScreen extends StatefulWidget {
@@ -20,11 +22,14 @@ class PasswordDetailScreen extends StatefulWidget {
 
 class _PasswordDetailScreenState
     extends State<PasswordDetailScreen> {
-
   late Password password;
 
   bool mostrarPassword = false;
   bool mostrarClave = false;
+
+  // ============================================================
+  // INICIALIZAR
+  // ============================================================
 
   @override
   void initState() {
@@ -33,37 +38,40 @@ class _PasswordDetailScreenState
     password = widget.password;
   }
 
+  // ============================================================
+  // ELIMINAR
+  // ============================================================
+
   Future<void> eliminarPassword() async {
     final confirmar = await showDialog<bool>(
       context: context,
-
-      builder: (context) {
+      builder: (dialogContext) {
         return AlertDialog(
           title: const Text(
             'Eliminar contraseña',
           ),
-
           content: Text(
             '¿Seguro que deseas eliminar la contraseña de ${password.servicio}?',
           ),
-
           actions: [
-
             TextButton(
               onPressed: () {
-                Navigator.pop(context, false);
+                Navigator.pop(
+                  dialogContext,
+                  false,
+                );
               },
-
               child: const Text(
                 'Cancelar',
               ),
             ),
-
             FilledButton(
               onPressed: () {
-                Navigator.pop(context, true);
+                Navigator.pop(
+                  dialogContext,
+                  true,
+                );
               },
-
               child: const Text(
                 'Eliminar',
               ),
@@ -77,16 +85,24 @@ class _PasswordDetailScreenState
       return;
     }
 
-    if (!mounted) return;
+    // Guardamos el provider antes del await.
+    final passwordProvider =
+        context.read<PasswordProvider>();
 
-    await context
-        .read<PasswordProvider>()
-        .eliminarPassword(password.id!);
+    await passwordProvider.eliminarPassword(
+      password.id!,
+    );
 
-    if (!mounted) return;
+    if (!mounted) {
+      return;
+    }
 
     Navigator.pop(context);
   }
+
+  // ============================================================
+  // CONSTRUIR CAMPO
+  // ============================================================
 
   Widget construirCampo(
     String titulo,
@@ -95,33 +111,28 @@ class _PasswordDetailScreenState
     bool oculto = false,
     VoidCallback? onToggle,
   }) {
+    final colorScheme =
+        Theme.of(context).colorScheme;
+
     return Container(
       margin: const EdgeInsets.only(
         bottom: 16,
       ),
-
       padding: const EdgeInsets.all(16),
-
       decoration: BoxDecoration(
-        color: Colors.white,
-
+        color: colorScheme.surface,
         borderRadius:
             BorderRadius.circular(14),
-
         border: Border.all(
-          color: Colors.grey.shade200,
+          color: colorScheme.outline
+              .withValues(alpha: 0.15),
         ),
       ),
-
       child: Row(
         children: [
-
           Icon(
             icono,
-
-            color: Theme.of(context)
-                .colorScheme
-                .primary,
+            color: colorScheme.primary,
           ),
 
           const SizedBox(width: 14),
@@ -130,15 +141,13 @@ class _PasswordDetailScreenState
             child: Column(
               crossAxisAlignment:
                   CrossAxisAlignment.start,
-
               children: [
-
                 Text(
                   titulo,
-
                   style: TextStyle(
                     fontSize: 12,
-                    color: Colors.grey.shade600,
+                    color: colorScheme
+                        .onSurfaceVariant,
                   ),
                 ),
 
@@ -148,10 +157,10 @@ class _PasswordDetailScreenState
                   oculto
                       ? '••••••••••••'
                       : valor,
-
                   style: const TextStyle(
                     fontSize: 16,
-                    fontWeight: FontWeight.w500,
+                    fontWeight:
+                        FontWeight.w500,
                   ),
                 ),
               ],
@@ -161,7 +170,6 @@ class _PasswordDetailScreenState
           if (onToggle != null)
             IconButton(
               onPressed: onToggle,
-
               icon: Icon(
                 oculto
                     ? Icons.visibility
@@ -173,9 +181,46 @@ class _PasswordDetailScreenState
     );
   }
 
+  // ============================================================
+  // BUILD
+  // ============================================================
+
   @override
   Widget build(BuildContext context) {
+    // ==========================================================
+    // OBTENER CONTEXTO
+    // ==========================================================
+
+    final contexto =
+        context.watch<ContextProvider>();
+
+    final esModoNocturno =
+        contexto.esModoNocturno;
+
+    // ==========================================================
+    // SEGURIDAD CONTEXTUAL
+    // ==========================================================
+
+    // Si estamos entrando a modo nocturno,
+    // ocultamos automáticamente los datos sensibles.
+
+    if (esModoNocturno &&
+        (mostrarPassword || mostrarClave)) {
+      WidgetsBinding.instance
+          .addPostFrameCallback((_) {
+        if (!mounted) return;
+
+        setState(() {
+          mostrarPassword = false;
+          mostrarClave = false;
+        });
+      });
+    }
+
     return Scaffold(
+      // ========================================================
+      // APP BAR
+      // ========================================================
 
       appBar: AppBar(
         title: const Text(
@@ -183,15 +228,15 @@ class _PasswordDetailScreenState
         ),
 
         actions: [
+          // ====================================================
+          // EDITAR
+          // ====================================================
 
-          // BOTÓN EDITAR
           IconButton(
             onPressed: () async {
-
               final resultado =
                   await Navigator.push(
                 context,
-
                 MaterialPageRoute(
                   builder: (_) =>
                       EditPasswordScreen(
@@ -200,28 +245,35 @@ class _PasswordDetailScreenState
                 ),
               );
 
-              if (resultado == true &&
-                  mounted) {
+              if (!mounted) {
+                return;
+              }
 
+              if (resultado == true) {
                 Navigator.pop(context);
               }
             },
-
             icon: const Icon(
               Icons.edit_outlined,
             ),
           ),
 
-          // BOTÓN ELIMINAR
+          // ====================================================
+          // ELIMINAR
+          // ====================================================
+
           IconButton(
             onPressed: eliminarPassword,
-
             icon: const Icon(
               Icons.delete_outline,
             ),
           ),
         ],
       ),
+
+      // ========================================================
+      // BODY
+      // ========================================================
 
       body: SingleChildScrollView(
         padding: const EdgeInsets.all(20),
@@ -231,27 +283,95 @@ class _PasswordDetailScreenState
               CrossAxisAlignment.start,
 
           children: [
+            // ==================================================
+            // AVISO CONTEXTUAL
+            // ==================================================
 
+            if (esModoNocturno)
+              Container(
+                width: double.infinity,
+
+                margin:
+                    const EdgeInsets.only(
+                  bottom: 20,
+                ),
+
+                padding:
+                    const EdgeInsets.all(14),
+
+                decoration:
+                    BoxDecoration(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .secondaryContainer,
+
+                  borderRadius:
+                      BorderRadius.circular(
+                    14,
+                  ),
+                ),
+
+                child: Row(
+                  children: [
+                    Icon(
+                      Icons
+                          .security_outlined,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSecondaryContainer,
+                    ),
+
+                    const SizedBox(
+                      width: 12,
+                    ),
+
+                    Expanded(
+                      child: Text(
+                        'Modo nocturno: la información sensible está protegida.',
+                        style:
+                            TextStyle(
+                          color: Theme.of(
+                            context,
+                          )
+                              .colorScheme
+                              .onSecondaryContainer,
+                          fontWeight:
+                              FontWeight.w500,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+            // ==================================================
             // ENCABEZADO
+            // ==================================================
+
             Center(
               child: Column(
                 children: [
-
                   Container(
                     width: 80,
                     height: 80,
 
-                    decoration: BoxDecoration(
+                    decoration:
+                        BoxDecoration(
                       color: Theme.of(context)
                           .colorScheme
                           .primaryContainer,
 
                       borderRadius:
-                          BorderRadius.circular(22),
+                          BorderRadius.circular(
+                        22,
+                      ),
                     ),
 
                     child: Icon(
-                      Icons.lock,
+                      esModoNocturno
+                          ? Icons
+                              .nightlight_round
+                          : Icons.lock,
 
                       size: 42,
 
@@ -261,46 +381,63 @@ class _PasswordDetailScreenState
                     ),
                   ),
 
-                  const SizedBox(height: 14),
+                  const SizedBox(
+                    height: 14,
+                  ),
 
                   Text(
                     password.servicio,
 
-                    style: const TextStyle(
+                    style:
+                        const TextStyle(
                       fontSize: 25,
-                      fontWeight: FontWeight.bold,
+                      fontWeight:
+                          FontWeight.bold,
                     ),
                   ),
 
-                  const SizedBox(height: 5),
+                  const SizedBox(
+                    height: 5,
+                  ),
 
                   Text(
                     password.categoria,
 
                     style: TextStyle(
-                      color: Colors.grey.shade600,
+                      color: Theme.of(context)
+                          .colorScheme
+                          .onSurfaceVariant,
                     ),
                   ),
                 ],
               ),
             ),
 
-            const SizedBox(height: 30),
+            const SizedBox(
+              height: 30,
+            ),
 
+            // ==================================================
             // USUARIO
+            // ==================================================
+
             construirCampo(
               'Usuario',
               password.usuario,
               Icons.person_outline,
             ),
 
+            // ==================================================
             // CONTRASEÑA
+            // ==================================================
+
             construirCampo(
               'Contraseña',
               password.password,
               Icons.lock_outline,
 
-              oculto: !mostrarPassword,
+              oculto:
+                  !mostrarPassword,
 
               onToggle: () {
                 setState(() {
@@ -310,13 +447,17 @@ class _PasswordDetailScreenState
               },
             ),
 
+            // ==================================================
             // CLAVE
+            // ==================================================
+
             construirCampo(
               'Clave',
               password.clave,
               Icons.key_outlined,
 
-              oculto: !mostrarClave,
+              oculto:
+                  !mostrarClave,
 
               onToggle: () {
                 setState(() {
@@ -326,7 +467,10 @@ class _PasswordDetailScreenState
               },
             ),
 
+            // ==================================================
             // NOTAS
+            // ==================================================
+
             if (password.notas.isNotEmpty)
               construirCampo(
                 'Notas',
@@ -334,18 +478,23 @@ class _PasswordDetailScreenState
                 Icons.notes_outlined,
               ),
 
-            const SizedBox(height: 10),
+            const SizedBox(
+              height: 10,
+            ),
 
+            // ==================================================
             // COPIAR
+            // ==================================================
+
             SizedBox(
               width: double.infinity,
               height: 52,
 
               child: FilledButton.icon(
                 onPressed: () {
-
-                  ScaffoldMessenger.of(context)
-                      .showSnackBar(
+                  ScaffoldMessenger.of(
+                    context,
+                  ).showSnackBar(
                     const SnackBar(
                       content: Text(
                         'La función de copiar la contraseña se agregará después.',
