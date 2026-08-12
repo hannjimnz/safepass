@@ -242,7 +242,7 @@ class _EditPasswordScreenState
                 obscureText: true,
 
                 decoration: const InputDecoration(
-                  labelText: 'Clave',
+                  labelText: 'Clave (opcional)',
 
                   prefixIcon:
                       Icon(Icons.key),
@@ -251,14 +251,6 @@ class _EditPasswordScreenState
                       OutlineInputBorder(),
                 ),
 
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty) {
-                    return 'Ingresa la clave';
-                  }
-
-                  return null;
-                },
               ),
 
               const SizedBox(height: 16),

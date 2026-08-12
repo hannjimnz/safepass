@@ -44,6 +44,7 @@ class _AddPasswordScreenState
   ];
 
   bool mostrarPassword = false;
+  bool mostrarClave = false;
 
   @override
   void dispose() {
@@ -196,24 +197,33 @@ class _AddPasswordScreenState
               TextFormField(
                 controller: claveController,
 
-                obscureText: true,
+                  obscureText: !mostrarClave,
 
-                decoration: const InputDecoration(
-                  labelText: 'Clave',
-                  hintText: 'Clave adicional',
-                  prefixIcon: Icon(Icons.key),
-                  border: OutlineInputBorder(),
+                  decoration: InputDecoration(
+                    labelText: 'Clave (opcional)',
+                    hintText: 'Clave adicional',
+
+                    prefixIcon: const Icon(
+                      Icons.key,
+                    ),
+
+                    suffixIcon: IconButton(
+                      icon: Icon(
+                        mostrarClave
+                            ? Icons.visibility_off
+                            : Icons.visibility,
+                      ),
+
+                      onPressed: () {
+                        setState(() {
+                          mostrarClave = !mostrarClave;
+                        });
+                      },
+                    ),
+
+                    border: const OutlineInputBorder(),
+                  ),
                 ),
-
-                validator: (value) {
-                  if (value == null ||
-                      value.isEmpty) {
-                    return 'Ingresa la clave';
-                  }
-
-                  return null;
-                },
-              ),
 
               const SizedBox(height: 16),
 

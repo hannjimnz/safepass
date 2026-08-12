@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import 'package:flutter/services.dart';
 import '../models/password.dart';
 import '../providers/password_provider.dart';
 import '../providers/context_provider.dart';
@@ -196,26 +197,6 @@ class _PasswordDetailScreenState
 
     final esModoNocturno =
         contexto.esModoNocturno;
-
-    // ==========================================================
-    // SEGURIDAD CONTEXTUAL
-    // ==========================================================
-
-    // Si estamos entrando a modo nocturno,
-    // ocultamos automáticamente los datos sensibles.
-
-    if (esModoNocturno &&
-        (mostrarPassword || mostrarClave)) {
-      WidgetsBinding.instance
-          .addPostFrameCallback((_) {
-        if (!mounted) return;
-
-        setState(() {
-          mostrarPassword = false;
-          mostrarClave = false;
-        });
-      });
-    }
 
     return Scaffold(
       // ========================================================
@@ -453,19 +434,25 @@ class _PasswordDetailScreenState
 
             construirCampo(
               'Clave',
-              password.clave,
+              password.clave.isEmpty
+                  ? 'No especificada'
+                  : password.clave,
               Icons.key_outlined,
 
               oculto:
+                  password.clave.isNotEmpty &&
                   !mostrarClave,
 
-              onToggle: () {
-                setState(() {
-                  mostrarClave =
-                      !mostrarClave;
-                });
-              },
-            ),
+              onToggle:
+                  password.clave.isEmpty
+                      ? null
+                      : () {
+                          setState(() {
+                            mostrarClave =
+                                !mostrarClave;
+                          });
+                        },
+),
 
             // ==================================================
             // NOTAS
@@ -491,13 +478,21 @@ class _PasswordDetailScreenState
               height: 52,
 
               child: FilledButton.icon(
-                onPressed: () {
+                onPressed: () async {
+                  await Clipboard.setData(
+                    ClipboardData(
+                      text: password.password,
+                    ),
+                  );
+
+                  if (!mounted) return;
+
                   ScaffoldMessenger.of(
                     context,
                   ).showSnackBar(
                     const SnackBar(
                       content: Text(
-                        'La función de copiar la contraseña se agregará después.',
+                        'Contraseña copiada',
                       ),
                     ),
                   );

@@ -29,14 +29,17 @@ class PasswordProvider extends ChangeNotifier {
     notifyListeners();
 
     try {
-      debugPrint('========== CARGANDO CONTRASEÑAS ==========');
+      debugPrint(
+        '========== CARGANDO CONTRASEÑAS ==========',
+      );
 
-      // Obtener las contraseñas cifradas desde SQLite
+      // Obtener contraseñas cifradas desde SQLite
       final passwordsCifradas =
           await _databaseHelper.obtenerPasswords();
 
       debugPrint(
-        'Registros encontrados en SQLite: ${passwordsCifradas.length}',
+        'Registros encontrados en SQLite: '
+        '${passwordsCifradas.length}',
       );
 
       final passwordsDescifradas = <Password>[];
@@ -47,15 +50,19 @@ class PasswordProvider extends ChangeNotifier {
           'Descifrando registro ID: ${password.id}',
         );
 
+        // Descifrar contraseña
         final passwordDescifrada =
             await _encryptionService.decrypt(
           password.password,
         );
 
+        // Si la clave está vacía, no intentamos descifrarla
         final claveDescifrada =
-            await _encryptionService.decrypt(
-          password.clave,
-        );
+            password.clave.trim().isEmpty
+                ? ''
+                : await _encryptionService.decrypt(
+                    password.clave,
+                  );
 
         passwordsDescifradas.add(
           Password(
@@ -75,7 +82,8 @@ class PasswordProvider extends ChangeNotifier {
       _passwords = passwordsDescifradas;
 
       debugPrint(
-        'Contraseñas cargadas correctamente: ${_passwords.length}',
+        'Contraseñas cargadas correctamente: '
+        '${_passwords.length}',
       );
 
       debugPrint(
@@ -122,14 +130,6 @@ class PasswordProvider extends ChangeNotifier {
         'Usuario: ${password.usuario}',
       );
 
-      debugPrint(
-        'Contraseña original: ${password.password}',
-      );
-
-      debugPrint(
-        'Clave original: ${password.clave}',
-      );
-
       // --------------------------------------------------------
       // CIFRAR CONTRASEÑA
       // --------------------------------------------------------
@@ -143,25 +143,20 @@ class PasswordProvider extends ChangeNotifier {
         '✅ Contraseña cifrada correctamente',
       );
 
-      debugPrint(
-        'Texto cifrado: $passwordCifrada',
-      );
-
       // --------------------------------------------------------
       // CIFRAR CLAVE
       // --------------------------------------------------------
 
+      // Si la clave está vacía, guardamos ''
       final claveCifrada =
-          await _encryptionService.encrypt(
-        password.clave,
-      );
+          password.clave.trim().isEmpty
+              ? ''
+              : await _encryptionService.encrypt(
+                  password.clave,
+                );
 
       debugPrint(
-        '✅ Clave cifrada correctamente',
-      );
-
-      debugPrint(
-        'Clave cifrada: $claveCifrada',
+        '✅ Clave procesada correctamente',
       );
 
       // --------------------------------------------------------
@@ -249,13 +244,15 @@ class PasswordProvider extends ChangeNotifier {
         password.password,
       );
 
-      // Cifrar nuevamente la clave
+      // Si la clave está vacía, guardamos ''
       final claveCifrada =
-          await _encryptionService.encrypt(
-        password.clave,
-      );
+          password.clave.trim().isEmpty
+              ? ''
+              : await _encryptionService.encrypt(
+                  password.clave,
+                );
 
-      // Crear objeto con los datos cifrados
+      // Crear objeto con datos cifrados
       final passwordParaGuardar = Password(
         id: password.id,
         servicio: password.servicio,
@@ -331,7 +328,8 @@ class PasswordProvider extends ChangeNotifier {
       return _passwords;
     }
 
-    final textoLower = texto.toLowerCase();
+    final textoLower =
+        texto.toLowerCase();
 
     return _passwords.where(
       (password) {

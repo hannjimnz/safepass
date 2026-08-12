@@ -73,16 +73,6 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text(
           'Password Vault',
         ),
-        actions: [
-          IconButton(
-            onPressed: () {
-              // Más adelante agregaremos configuración.
-            },
-            icon: const Icon(
-              Icons.settings_outlined,
-            ),
-          ),
-        ],
       ),
 
       // ==========================================================
@@ -265,57 +255,64 @@ class _HomeScreenState extends State<HomeScreen> {
           // ======================================================
 
           Expanded(
-            child: provider.isLoading
-                ? const Center(
-                    child:
-                        CircularProgressIndicator(),
-                  )
-                : passwords.isEmpty
-                    ? _construirEstadoVacio()
-                    : ListView.builder(
-                        padding:
-                            const EdgeInsets
-                                .symmetric(
-                          horizontal: 16,
-                          vertical: 4,
-                        ),
+                child: provider.isLoading
+                    ? const Center(
+                        child: CircularProgressIndicator(),
+                      )
+                    : passwords.isEmpty
+                        ? _construirEstadoVacio()
+                        : ListView.builder(
+                            padding:
+                                const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 4,
+                            ),
+                            itemCount: passwords.length,
+                            itemBuilder: (context, index) {
+                              final password =
+                                  passwords[index];
 
-                        itemCount:
-                            passwords.length,
+                              return PasswordCard(
+                                password: password,
+                                onTap: () async {
+                                  await Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          PasswordDetailScreen(
+                                        password: password,
+                                      ),
+                                    ),
+                                  );
 
-                        itemBuilder:
-                            (context, index) {
-                          final password =
-                              passwords[index];
+                                  if (!mounted) {
+                                    return;
+                                  }
 
-                          return PasswordCard(
-                            password: password,
-
-                            onTap: () async {
-                              await Navigator.push(
-                                context,
-
-                                MaterialPageRoute(
-                                  builder: (_) =>
-                                      PasswordDetailScreen(
-                                    password:
-                                        password,
-                                  ),
-                                ),
+                                  context
+                                      .read<PasswordProvider>()
+                                      .cargarPasswords();
+                                },
                               );
-
-                              if (!mounted) {
-                                return;
-                              }
-
-                              context
-                                  .read<
-                                      PasswordProvider>()
-                                  .cargarPasswords();
                             },
-                          );
-                        },
-                      ),
+                          ),
+              ),
+
+          // CRÉDITOS
+          const Padding(
+            padding: EdgeInsets.only(
+              top: 6,
+              bottom: 10,
+            ),
+            child: Text(
+              'by Hannia Jimenez & Jazmin Gutierrez',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontSize: 10,
+                color: Colors.grey,
+                fontStyle: FontStyle.italic,
+              ),
+            ),
           ),
         ],
       ),
