@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import '../constants/service_options.dart';
 import '../models/password.dart';
 import '../providers/password_provider.dart';
+import '../widgets/password_generator_dialog.dart';
 
 class EditPasswordScreen extends StatefulWidget {
   final Password password;
@@ -33,6 +34,17 @@ class _EditPasswordScreenState
   late String categoriaSeleccionada;
 
   bool mostrarPassword = false;
+
+  Future<void> _generarPassword() async {
+    final passwordGenerada = await showDialog<String>(
+      context: context,
+      builder: (_) => const PasswordGeneratorDialog(),
+    );
+
+    if (!mounted || passwordGenerada == null) return;
+
+    passwordController.text = passwordGenerada;
+  }
 
   final List<String> categorias = [
     'Personal',
@@ -242,19 +254,30 @@ class _EditPasswordScreenState
                   prefixIcon:
                       const Icon(Icons.lock),
 
-                  suffixIcon: IconButton(
-                    icon: Icon(
-                      mostrarPassword
-                          ? Icons.visibility_off
-                          : Icons.visibility,
-                    ),
-
-                    onPressed: () {
-                      setState(() {
-                        mostrarPassword =
-                            !mostrarPassword;
-                      });
-                    },
+                  suffixIcon: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      IconButton(
+                        tooltip: mostrarPassword
+                            ? 'Ocultar contraseña'
+                            : 'Mostrar contraseña',
+                        icon: Icon(
+                          mostrarPassword
+                              ? Icons.visibility_off
+                              : Icons.visibility,
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            mostrarPassword = !mostrarPassword;
+                          });
+                        },
+                      ),
+                      IconButton(
+                        tooltip: 'Generar contraseña',
+                        icon: const Icon(Icons.auto_awesome),
+                        onPressed: _generarPassword,
+                      ),
+                    ],
                   ),
 
                   border:
