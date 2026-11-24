@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
-import 'providers/password_provider.dart';
+import 'providers/app_lock_provider.dart';
 import 'providers/context_provider.dart';
+import 'providers/password_provider.dart';
+import 'screens/app_lock_screen.dart';
 import 'screens/splash_screen.dart';
 
 void main() {
@@ -12,6 +14,10 @@ void main() {
         // Provider de las contraseñas
         ChangeNotifierProvider(
           create: (_) => PasswordProvider(),
+        ),
+
+        ChangeNotifierProvider(
+          create: (_) => AppLockProvider(),
         ),
 
         // Provider del contexto
@@ -41,6 +47,20 @@ class PasswordVaultApp extends StatelessWidget {
       title: 'Password Vault',
 
       debugShowCheckedModeBanner: false,
+
+      builder: (context, child) {
+        return Consumer<AppLockProvider>(
+          builder: (context, appLock, _) {
+            return Stack(
+              fit: StackFit.expand,
+              children: [
+                child ?? const SizedBox.shrink(),
+                if (appLock.isLocked) const AppLockScreen(),
+              ],
+            );
+          },
+        );
+      },
 
       // ======================================================
       // TEMA SEGÚN EL CONTEXTO

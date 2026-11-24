@@ -1,7 +1,9 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:provider/provider.dart';
 
+import '../providers/app_lock_provider.dart';
 import '../services/biometric_service.dart';
 import 'home_screen.dart';
 
@@ -68,6 +70,8 @@ class _SplashScreenState extends State<SplashScreen> {
     if (!mounted) return;
 
     if (autenticado) {
+      context.read<AppLockProvider>().markAuthenticated();
+
       setState(() {
         _mensaje = 'Acceso concedido';
       });

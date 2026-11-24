@@ -8,6 +8,7 @@ SafePass es una aplicación móvil personal para guardar y consultar credenciale
 - Permite buscar por servicio, usuario o categoría.
 - Permite ver, editar, copiar y eliminar credenciales.
 - Solicita autenticación del dispositivo al iniciar: biometría cuando está disponible o el PIN, patrón o código de desbloqueo del teléfono.
+- Bloquea la bóveda al pasar la aplicación a segundo plano y solicita autenticación al volver.
 - Incluye modo claro y oscuro, que cambia según la hora local del dispositivo.
 
 ## Cómo ejecutar
