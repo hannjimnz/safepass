@@ -173,6 +173,23 @@ class DatabaseHelper {
     );
   }
 
+  Future<void> reemplazarPasswords(
+    List<Password> passwords,
+  ) async {
+    final db = await database;
+
+    await db.transaction((transaction) async {
+      await transaction.delete('passwords');
+
+      final batch = transaction.batch();
+      for (final password in passwords) {
+        batch.insert('passwords', password.toMap());
+      }
+
+      await batch.commit(noResult: true);
+    });
+  }
+
   // CERRAR BASE DE DATOS
   Future<void> close() async {
     final db = await database;

@@ -1,13 +1,22 @@
+import 'dart:async';
+import 'dart:typed_data';
+
+import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../services/backup_service.dart';
+import '../providers/app_lock_provider.dart';
 import '../providers/password_provider.dart';
 import '../providers/context_provider.dart';
 
+import '../widgets/backup_passphrase_dialog.dart';
 import '../widgets/password_card.dart';
 
 import 'add_password_screen.dart';
 import 'password_detail_screen.dart';
+
+enum _BackupAction { export, restore }
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -22,6 +31,9 @@ class _HomeScreenState extends State<HomeScreen> {
       TextEditingController();
 
   String textoBusqueda = '';
+
+  final BackupService _backupService = BackupService();
+  bool _procesandoRespaldo = false;
 
   @override
   void initState() {
@@ -41,6 +53,167 @@ class _HomeScreenState extends State<HomeScreen> {
     searchController.dispose();
 
     super.dispose();
+  }
+
+  Future<String?> _pedirFraseRespaldo({
+    required bool confirmar,
+  }) {
+    return showDialog<String>(
+      context: context,
+      builder: (_) => BackupPassphraseDialog(
+        confirmPassphrase: confirmar,
+      ),
+    );
+  }
+
+  Future<void> _exportarRespaldo() async {
+    final provider = context.read<PasswordProvider>();
+    if (provider.isLoading) {
+      _mostrarMensaje('Espera a que termine de cargar la bóveda.');
+      return;
+    }
+
+    setState(() => _procesandoRespaldo = true);
+    try {
+      final frase = await _pedirFraseRespaldo(confirmar: true);
+      if (!mounted || frase == null) return;
+
+      final bytes = await _backupService.crearRespaldo(
+        provider.passwords,
+        frase,
+      );
+      if (!mounted) return;
+
+      final now = DateTime.now();
+      final date = '${now.year}-${now.month.toString().padLeft(2, '0')}-'
+          '${now.day.toString().padLeft(2, '0')}';
+      final appLock = context.read<AppLockProvider>();
+      final savedFile = await appLock.runWithSystemFilePicker(
+        () => FilePicker.saveFile(
+          dialogTitle: 'Guardar respaldo de SafePass',
+          fileName: 'safepass-backup-$date.safepass',
+          type: FileType.custom,
+          allowedExtensions: ['safepass'],
+          bytes: bytes,
+        ),
+      );
+
+      if (!mounted || appLock.isLocked) return;
+      if (savedFile != null) {
+        _mostrarMensaje('Respaldo cifrado guardado.');
+      }
+    } catch (error) {
+      _mostrarMensaje('No se pudo crear el respaldo: $error');
+    } finally {
+      if (mounted) setState(() => _procesandoRespaldo = false);
+    }
+  }
+
+  Future<void> _importarRespaldo() async {
+    final provider = context.read<PasswordProvider>();
+    if (provider.isLoading) {
+      _mostrarMensaje('Espera a que termine de cargar la bóveda.');
+      return;
+    }
+
+    setState(() => _procesandoRespaldo = true);
+    try {
+      final appLock = context.read<AppLockProvider>();
+      final selection = await appLock.runWithSystemFilePicker(
+        () => FilePicker.pickFiles(
+          type: FileType.custom,
+          allowedExtensions: ['safepass'],
+          withReadStream: true,
+        ),
+      );
+      if (!mounted ||
+          appLock.isLocked ||
+          selection == null ||
+          selection.files.isEmpty) {
+        return;
+      }
+
+      final file = selection.files.single;
+      if (file.size > BackupService.maxBackupSizeBytes) {
+        _mostrarMensaje('El archivo supera el tamaño máximo permitido.');
+        return;
+      }
+
+      final stream = file.readStream;
+      if (stream == null) {
+        _mostrarMensaje('No se pudo leer el archivo seleccionado.');
+        return;
+      }
+
+      final builder = BytesBuilder(copy: false);
+      var totalBytes = 0;
+      await for (final chunk in stream) {
+        totalBytes += chunk.length;
+        if (totalBytes > BackupService.maxBackupSizeBytes) {
+          _mostrarMensaje('El archivo supera el tamaño máximo permitido.');
+          return;
+        }
+        builder.add(chunk);
+      }
+      final bytes = builder.takeBytes();
+
+      final frase = await _pedirFraseRespaldo(confirmar: false);
+      if (!mounted || frase == null) return;
+
+      final passwords = await _backupService.abrirRespaldo(bytes, frase);
+      if (!mounted) return;
+
+      final shouldReplace = await _confirmarRestauracion(
+        cantidadActual: provider.passwords.length,
+        cantidadRespaldo: passwords.length,
+      );
+      if (!mounted || shouldReplace != true) return;
+
+      await provider.restaurarPasswords(passwords);
+      if (!mounted) return;
+
+      _mostrarMensaje(
+        'Se restauraron ${passwords.length} credenciales.',
+      );
+    } catch (error) {
+      _mostrarMensaje('No se pudo restaurar el respaldo: $error');
+    } finally {
+      if (mounted) setState(() => _procesandoRespaldo = false);
+    }
+  }
+
+  Future<bool?> _confirmarRestauracion({
+    required int cantidadActual,
+    required int cantidadRespaldo,
+  }) {
+    return showDialog<bool>(
+      context: context,
+      builder: (dialogContext) => AlertDialog(
+        title: const Text('Reemplazar la bóveda'),
+        content: Text(
+          'El respaldo contiene $cantidadRespaldo credenciales. '
+          'Se reemplazarán las $cantidadActual credenciales actuales. '
+          'Esta acción no se puede deshacer desde SafePass.',
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(dialogContext, false),
+            child: const Text('Cancelar'),
+          ),
+          FilledButton(
+            onPressed: () => Navigator.pop(dialogContext, true),
+            child: const Text('Reemplazar'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  void _mostrarMensaje(String mensaje) {
+    if (!mounted) return;
+    ScaffoldMessenger.of(context).showSnackBar(
+      SnackBar(content: Text(mensaje)),
+    );
   }
 
   @override
@@ -73,6 +246,38 @@ class _HomeScreenState extends State<HomeScreen> {
         title: const Text(
           'Password Vault',
         ),
+        actions: [
+          if (_procesandoRespaldo)
+            const Padding(
+              padding: EdgeInsets.all(16),
+              child: SizedBox.square(
+                dimension: 22,
+                child: CircularProgressIndicator(strokeWidth: 2),
+              ),
+            )
+          else
+            PopupMenuButton<_BackupAction>(
+              tooltip: 'Respaldos',
+              icon: const Icon(Icons.backup_outlined),
+              onSelected: (action) {
+                if (action == _BackupAction.export) {
+                  unawaited(_exportarRespaldo());
+                } else {
+                  unawaited(_importarRespaldo());
+                }
+              },
+              itemBuilder: (context) => const [
+                PopupMenuItem(
+                  value: _BackupAction.export,
+                  child: Text('Crear respaldo cifrado'),
+                ),
+                PopupMenuItem(
+                  value: _BackupAction.restore,
+                  child: Text('Restaurar respaldo'),
+                ),
+              ],
+            ),
+        ],
       ),
 
       // ==========================================================
@@ -321,34 +526,23 @@ class _HomeScreenState extends State<HomeScreen> {
       // BOTÓN AGREGAR
       // ==========================================================
 
-      floatingActionButton:
-          FloatingActionButton.extended(
-        onPressed: () async {
-          await Navigator.push(
-            context,
+      floatingActionButton: FloatingActionButton.extended(
+        onPressed: _procesandoRespaldo
+            ? null
+            : () async {
+                await Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (_) => const AddPasswordScreen(),
+                  ),
+                );
 
-            MaterialPageRoute(
-              builder: (_) =>
-                  const AddPasswordScreen(),
-            ),
-          );
+                if (!mounted) return;
 
-          if (!mounted) {
-            return;
-          }
-
-          context
-              .read<PasswordProvider>()
-              .cargarPasswords();
-        },
-
-        icon: const Icon(
-          Icons.add,
-        ),
-
-        label: const Text(
-          'Agregar',
-        ),
+                context.read<PasswordProvider>().cargarPasswords();
+              },
+        icon: const Icon(Icons.add),
+        label: const Text('Agregar'),
       ),
     );
   }

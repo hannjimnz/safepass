@@ -9,6 +9,8 @@ class AppLockProvider extends ChangeNotifier with WidgetsBindingObserver {
   bool _isLocked = false;
   bool _isAuthenticating = false;
   String? _message;
+  int _externalActivityDepth = 0;
+  bool _pausedForExternalActivity = false;
 
   bool get isLocked => _isLocked;
   bool get isAuthenticating => _isAuthenticating;
@@ -30,6 +32,13 @@ class AppLockProvider extends ChangeNotifier with WidgetsBindingObserver {
   void didChangeAppLifecycleState(AppLifecycleState state) {
     if (!_hasAuthenticated) return;
 
+    if (_externalActivityDepth > 0) {
+      if (state == AppLifecycleState.paused) {
+        _pausedForExternalActivity = true;
+      }
+      return;
+    }
+
     if (state == AppLifecycleState.paused && !_isLocked) {
       _isLocked = true;
       _message = null;
@@ -44,8 +53,8 @@ class AppLockProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
   }
 
-  Future<void> autenticarParaDesbloquear() async {
-    if (!_isLocked || _isAuthenticating) return;
+  Future<bool> autenticarParaDesbloquear() async {
+    if (!_isLocked || _isAuthenticating) return !_isLocked;
 
     _isAuthenticating = true;
     _message = null;
@@ -68,6 +77,27 @@ class AppLockProvider extends ChangeNotifier with WidgetsBindingObserver {
     }
 
     notifyListeners();
+    return autenticado;
+  }
+
+  Future<T> runWithSystemFilePicker<T>(
+    Future<T> Function() operation,
+  ) async {
+    _externalActivityDepth++;
+    try {
+      return await operation();
+    } finally {
+      _externalActivityDepth--;
+      if (_externalActivityDepth == 0 &&
+          _pausedForExternalActivity &&
+          _hasAuthenticated) {
+        _pausedForExternalActivity = false;
+        _isLocked = true;
+        _message = null;
+        notifyListeners();
+        await autenticarParaDesbloquear();
+      }
+    }
   }
 
   @override

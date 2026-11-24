@@ -320,6 +320,30 @@ class PasswordProvider extends ChangeNotifier {
     }
   }
 
+  Future<void> restaurarPasswords(
+    List<Password> passwords,
+  ) async {
+    final passwordsCifradas = <Password>[];
+
+    for (final password in passwords) {
+      passwordsCifradas.add(
+        Password(
+          servicio: await _encryptionService.encrypt(password.servicio),
+          usuario: await _encryptionService.encrypt(password.usuario),
+          password: await _encryptionService.encrypt(password.password),
+          clave: await _encryptionService.encrypt(password.clave),
+          categoria: password.categoria,
+          notas: await _encryptionService.encrypt(password.notas),
+          icono: password.icono,
+          fechaCreacion: password.fechaCreacion,
+        ),
+      );
+    }
+
+    await _databaseHelper.reemplazarPasswords(passwordsCifradas);
+    await cargarPasswords();
+  }
+
   // ============================================================
   // ELIMINAR CONTRASEÑA
   // ============================================================
