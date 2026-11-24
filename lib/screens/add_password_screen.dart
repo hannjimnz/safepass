@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 
+import '../constants/service_options.dart';
 import '../models/password.dart';
 import '../providers/password_provider.dart';
 
@@ -31,6 +32,8 @@ class _AddPasswordScreenState
 
   final TextEditingController notasController =
       TextEditingController();
+
+  String? servicioSeleccionado;
 
   String categoriaSeleccionada = 'Personal';
 
@@ -63,7 +66,9 @@ class _AddPasswordScreenState
     }
 
     final password = Password(
-      servicio: servicioController.text.trim(),
+      servicio: servicioSeleccionado == otherServiceOption
+          ? servicioController.text.trim()
+          : servicioSeleccionado!,
       usuario: usuarioController.text.trim(),
       password: passwordController.text,
       clave: claveController.text,
@@ -111,25 +116,52 @@ class _AddPasswordScreenState
 
               const SizedBox(height: 25),
 
-              TextFormField(
-                controller: servicioController,
-
+              DropdownButtonFormField<String>(
+                initialValue: servicioSeleccionado,
                 decoration: const InputDecoration(
-                  labelText: 'Nombre del servicio',
-                  hintText: 'Ej. GitHub',
+                  labelText: 'Servicio',
                   prefixIcon: Icon(Icons.language),
                   border: OutlineInputBorder(),
                 ),
-
+                hint: const Text('Selecciona un servicio'),
+                items: availableServices.map((servicio) {
+                  return DropdownMenuItem(
+                    value: servicio,
+                    child: Text(servicio),
+                  );
+                }).toList(),
+                onChanged: (value) {
+                  setState(() {
+                    servicioSeleccionado = value;
+                  });
+                },
                 validator: (value) {
-                  if (value == null ||
-                      value.trim().isEmpty) {
-                    return 'Ingresa el nombre del servicio';
+                  if (value == null) {
+                    return 'Selecciona un servicio';
                   }
-
                   return null;
                 },
               ),
+
+              if (servicioSeleccionado == otherServiceOption) ...[
+                const SizedBox(height: 16),
+                TextFormField(
+                  controller: servicioController,
+                  decoration: const InputDecoration(
+                    labelText: 'Nombre del servicio',
+                    hintText: 'Escribe el nombre del servicio',
+                    prefixIcon: Icon(Icons.edit_outlined),
+                    border: OutlineInputBorder(),
+                  ),
+                  validator: (value) {
+                    if (servicioSeleccionado == otherServiceOption &&
+                        (value == null || value.trim().isEmpty)) {
+                      return 'Escribe el nombre del servicio';
+                    }
+                    return null;
+                  },
+                ),
+              ],
 
               const SizedBox(height: 16),
 
