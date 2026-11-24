@@ -17,6 +17,7 @@ class _SplashScreenState extends State<SplashScreen> {
       BiometricService();
 
   bool _autenticando = false;
+  bool _debeConfigurarBloqueo = false;
   String _mensaje = 'Iniciando SafePass...';
 
   @override
@@ -34,11 +35,18 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!mounted) return;
 
+    await _autenticarYContinuar();
+  }
+
+  Future<void> _autenticarYContinuar() async {
+    if (_autenticando) return;
+
     setState(() {
-      _mensaje = 'Verificando seguridad...';
+      _autenticando = true;
+      _debeConfigurarBloqueo = false;
+      _mensaje = 'Desbloquea SafePass';
     });
 
-    // Comprobar biometría
     final disponible =
         await _biometricService.puedeAutenticar();
 
@@ -46,59 +54,14 @@ class _SplashScreenState extends State<SplashScreen> {
 
     if (!disponible) {
       setState(() {
+        _autenticando = false;
+        _debeConfigurarBloqueo = true;
         _mensaje =
-            'La biometría no está disponible';
+            'Configura un PIN, patrón o contraseña de bloqueo en tu dispositivo para proteger SafePass.';
       });
-
       return;
     }
 
-    // Iniciar autenticación
-    setState(() {
-      _autenticando = true;
-      _mensaje = 'Desbloquea SafePass';
-    });
-
-    final autenticado =
-        await _biometricService.autenticar();
-
-    if (!mounted) return;
-
-    if (autenticado) {
-      // MUY IMPORTANTE:
-      // dejamos terminar completamente
-      // la autenticación antes de navegar.
-
-      setState(() {
-        _mensaje = 'Acceso concedido';
-      });
-
-      await Future.delayed(
-        const Duration(milliseconds: 500),
-      );
-
-      if (!mounted) return;
-
-      Navigator.of(context).pushReplacement(
-        MaterialPageRoute(
-          builder: (_) => const HomeScreen(),
-        ),
-      );
-    } else {
-      setState(() {
-        _autenticando = false;
-        _mensaje =
-            'No se pudo desbloquear SafePass';
-      });
-    }
-  }
-
-  Future<void> _reintentar() async {
-    setState(() {
-      _autenticando = true;
-      _mensaje = 'Desbloquea SafePass';
-    });
-
     final autenticado =
         await _biometricService.autenticar();
 
@@ -123,8 +86,7 @@ class _SplashScreenState extends State<SplashScreen> {
     } else {
       setState(() {
         _autenticando = false;
-        _mensaje =
-            'Autenticación cancelada';
+        _mensaje = 'No se completó la autenticación';
       });
     }
   }
@@ -185,21 +147,27 @@ class _SplashScreenState extends State<SplashScreen> {
                 if (_autenticando)
                   const CircularProgressIndicator(),
 
-                if (!_autenticando &&
-                    _mensaje.contains(
-                      'No se pudo',
-                    ))
+                if (!_autenticando)
                   SizedBox(
                     width: double.infinity,
                     height: 52,
                     child: FilledButton.icon(
-                      onPressed: _reintentar,
+                      onPressed: _autenticarYContinuar,
                       icon: const Icon(
-                        Icons.fingerprint,
+                        Icons.lock_open,
                       ),
                       label: const Text(
-                        'Intentar nuevamente',
+                        'Volver a intentar',
                       ),
+                    ),
+                  ),
+
+                if (!_autenticando && _debeConfigurarBloqueo)
+                  const Padding(
+                    padding: EdgeInsets.only(top: 12),
+                    child: Text(
+                      'Después de configurarlo, vuelve aquí e inténtalo de nuevo.',
+                      textAlign: TextAlign.center,
                     ),
                   ),
               ],

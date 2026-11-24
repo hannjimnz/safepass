@@ -5,18 +5,14 @@ class BiometricService {
       LocalAuthentication();
 
   // ============================================================
-  // COMPROBAR SI EL DISPOSITIVO SOPORTA BIOMETRÍA
+  // COMPROBAR SI EL DISPOSITIVO ADMITE AUTENTICACIÓN LOCAL
   // ============================================================
 
   Future<bool> puedeAutenticar() async {
     try {
-      final disponible =
-          await _auth.isDeviceSupported();
-
-      final tieneBiometria =
-          await _auth.canCheckBiometrics;
-
-      return disponible && tieneBiometria;
+      // isDeviceSupported también contempla el PIN, patrón o código
+      // del dispositivo cuando no hay biometría disponible.
+      return await _auth.isDeviceSupported();
     } catch (e) {
       return false;
     }
@@ -52,7 +48,7 @@ class BiometricService {
           await _auth.authenticate(
         localizedReason:
             'Autentícate para acceder a tus contraseñas',
-        biometricOnly: true,
+        biometricOnly: false,
         persistAcrossBackgrounding: true,
       );
 
