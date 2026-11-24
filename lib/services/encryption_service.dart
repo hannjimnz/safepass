@@ -32,8 +32,8 @@ class EncryptionService {
 
   Future<String> encrypt(String texto) async {
     if (texto.isEmpty) {
-    return '';
-  }
+      return '';
+    }
     final key = await _obtenerClave();
 
     final iv = IV.fromSecureRandom(16);
@@ -51,6 +51,10 @@ class EncryptionService {
   }
 
   Future<String> decrypt(String textoCifrado) async {
+    if (textoCifrado.isEmpty) {
+      return '';
+    }
+
     final key = await _obtenerClave();
 
     final partes = textoCifrado.split(':');

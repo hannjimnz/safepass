@@ -56,23 +56,36 @@ class PasswordProvider extends ChangeNotifier {
           password.password,
         );
 
+        final servicioDescifrado =
+            await _encryptionService.decrypt(
+          password.servicio,
+        );
+
+        final usuarioDescifrado =
+            await _encryptionService.decrypt(
+          password.usuario,
+        );
+
         // Si la clave está vacía, no intentamos descifrarla
         final claveDescifrada =
-            password.clave.trim().isEmpty
-                ? ''
-                : await _encryptionService.decrypt(
-                    password.clave,
-                  );
+            await _encryptionService.decrypt(
+          password.clave,
+        );
+
+        final notasDescifradas =
+            await _encryptionService.decrypt(
+          password.notas,
+        );
 
         passwordsDescifradas.add(
           Password(
             id: password.id,
-            servicio: password.servicio,
-            usuario: password.usuario,
+            servicio: servicioDescifrado,
+            usuario: usuarioDescifrado,
             password: passwordDescifrada,
             clave: claveDescifrada,
             categoria: password.categoria,
-            notas: password.notas,
+            notas: notasDescifradas,
             icono: password.icono,
             fechaCreacion: password.fechaCreacion,
           ),
@@ -122,14 +135,6 @@ class PasswordProvider extends ChangeNotifier {
         '========== AGREGANDO CONTRASEÑA ==========',
       );
 
-      debugPrint(
-        'Servicio: ${password.servicio}',
-      );
-
-      debugPrint(
-        'Usuario: ${password.usuario}',
-      );
-
       // --------------------------------------------------------
       // CIFRAR CONTRASEÑA
       // --------------------------------------------------------
@@ -137,6 +142,21 @@ class PasswordProvider extends ChangeNotifier {
       final passwordCifrada =
           await _encryptionService.encrypt(
         password.password,
+      );
+
+      final servicioCifrado =
+          await _encryptionService.encrypt(
+        password.servicio,
+      );
+
+      final usuarioCifrado =
+          await _encryptionService.encrypt(
+        password.usuario,
+      );
+
+      final notasCifradas =
+          await _encryptionService.encrypt(
+        password.notas,
       );
 
       debugPrint(
@@ -149,11 +169,9 @@ class PasswordProvider extends ChangeNotifier {
 
       // Si la clave está vacía, guardamos ''
       final claveCifrada =
-          password.clave.trim().isEmpty
-              ? ''
-              : await _encryptionService.encrypt(
-                  password.clave,
-                );
+          await _encryptionService.encrypt(
+        password.clave,
+      );
 
       debugPrint(
         '✅ Clave procesada correctamente',
@@ -165,12 +183,12 @@ class PasswordProvider extends ChangeNotifier {
 
       final passwordParaGuardar = Password(
         id: password.id,
-        servicio: password.servicio,
-        usuario: password.usuario,
+        servicio: servicioCifrado,
+        usuario: usuarioCifrado,
         password: passwordCifrada,
         clave: claveCifrada,
         categoria: password.categoria,
-        notas: password.notas,
+        notas: notasCifradas,
         icono: password.icono,
         fechaCreacion: password.fechaCreacion,
       );
@@ -244,23 +262,36 @@ class PasswordProvider extends ChangeNotifier {
         password.password,
       );
 
+      final servicioCifrado =
+          await _encryptionService.encrypt(
+        password.servicio,
+      );
+
+      final usuarioCifrado =
+          await _encryptionService.encrypt(
+        password.usuario,
+      );
+
+      final notasCifradas =
+          await _encryptionService.encrypt(
+        password.notas,
+      );
+
       // Si la clave está vacía, guardamos ''
       final claveCifrada =
-          password.clave.trim().isEmpty
-              ? ''
-              : await _encryptionService.encrypt(
-                  password.clave,
-                );
+          await _encryptionService.encrypt(
+        password.clave,
+      );
 
       // Crear objeto con datos cifrados
       final passwordParaGuardar = Password(
         id: password.id,
-        servicio: password.servicio,
-        usuario: password.usuario,
+        servicio: servicioCifrado,
+        usuario: usuarioCifrado,
         password: passwordCifrada,
         clave: claveCifrada,
         categoria: password.categoria,
-        notas: password.notas,
+        notas: notasCifradas,
         icono: password.icono,
         fechaCreacion: password.fechaCreacion,
       );

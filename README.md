@@ -27,8 +27,9 @@ En Android, configura un método de bloqueo de pantalla en el dispositivo. SafeP
 ## Almacenamiento y seguridad actual
 
 - Las credenciales se guardan localmente en SQLite (`password_vault.db`). No se envían a un servidor.
-- La contraseña y la clave adicional se cifran con AES. La clave de cifrado se guarda mediante `flutter_secure_storage`.
-- El servicio, el usuario, la categoría, las notas y la fecha de creación actualmente se almacenan sin cifrar. No guardes información sensible en esos campos hasta que también estén protegidos.
+- El servicio, el usuario, la contraseña, la clave adicional y las notas se cifran con AES. La clave de cifrado se guarda mediante `flutter_secure_storage`.
+- La categoría, el icono y la fecha de creación permanecen sin cifrar para mostrar y filtrar la bóveda.
+- Al actualizar desde la versión anterior, SQLite cifra el servicio, el usuario y las notas de los registros existentes durante la migración.
 - La bóveda no tiene todavía una función de exportación o respaldo cifrado. Reinstalar la aplicación o perder los datos y la clave del dispositivo podría hacer que las credenciales no se puedan recuperar.
 - La contraseña copiada queda en el portapapeles del sistema; SafePass todavía no la borra automáticamente.
 

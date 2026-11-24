@@ -2,6 +2,7 @@ import 'package:path/path.dart';
 import 'package:sqflite/sqflite.dart';
 
 import '../models/password.dart';
+import '../services/encryption_service.dart';
 
 class DatabaseHelper {
   static final DatabaseHelper instance =
@@ -35,9 +36,46 @@ class DatabaseHelper {
 
     return await openDatabase(
       path,
-      version: 1,
+      version: 2,
       onCreate: _createDB,
+      onUpgrade: _upgradeDB,
     );
+  }
+
+  Future<void> _upgradeDB(
+    Database db,
+    int oldVersion,
+    int newVersion,
+  ) async {
+    if (oldVersion < 2 && newVersion >= 2) {
+      final rows = await db.query(
+        'passwords',
+        columns: ['id', 'servicio', 'usuario', 'notas'],
+      );
+      final encryptionService = EncryptionService();
+      final batch = db.batch();
+
+      for (final row in rows) {
+        batch.update(
+          'passwords',
+          {
+            'servicio': await encryptionService.encrypt(
+              row['servicio'] as String,
+            ),
+            'usuario': await encryptionService.encrypt(
+              row['usuario'] as String,
+            ),
+            'notas': await encryptionService.encrypt(
+              (row['notas'] as String?) ?? '',
+            ),
+          },
+          where: 'id = ?',
+          whereArgs: [row['id']],
+        );
+      }
+
+      await batch.commit(noResult: true);
+    }
   }
 
   Future<void> _createDB(
